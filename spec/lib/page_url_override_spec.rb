@@ -143,4 +143,30 @@ describe Page do
     
   end
   
+  context "find_by_url" do
+    
+    context "on pages without url_override" do
+      context "that are unpublished" do
+        it "should not be found at their generated url in live mode"
+        it "should be found at their generated url in dev mode"
+      end
+      context "that are published" do
+        it "should be found at their generated url in live mode"
+        it "should be found at their generated url in dev mode"
+      end
+    end
+    
+    context "on pages with url_override" do
+      context "that are unpublished" do
+        it "should not be found at their url_override in live mode"
+        it "should be found at their url_override in dev mode"
+      end
+      context "that are published" do
+        it "should be found at their url_override in live mode"
+        it "should be found at their url_override in dev mode"
+      end
+    end
+    
+  end
+  
 end

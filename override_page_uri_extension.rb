@@ -18,13 +18,12 @@ class OverridePageUriExtension < Radiant::Extension
   url "http://yourwebsite.com/override_page_uri"
   
   def activate
-    Page.send(:validate, :validate_url_override_is_a_valid_uri)
-    Page.send(:validate, :validate_url_override_uniqueness)
+    Page.send(:include, PageUrlOverride)
     admin.page.edit.add :extended_metadata, "url_override"
   end
   
   def deactivate
-    # admin.page.edit.remove :extended_metadata, "url_override"
+    # TODO how do we remove an admin page region partial?
   end
   
 end
