@@ -1,21 +1,30 @@
 # Uncomment this if you reference any of your controllers in activate
 # require_dependency 'application'
 
+# these need to required here for some reason, or radiant throws a tantrum
+# whenever a new request is made (at least in development mode). Something to
+# do with class loading order. Couldn't figure out exactly what was going on
+# TODO get to the bottom of what's going on here. It should work without these.
+require 'page_part'
+require 'user'
+
+# here is what we actually need to make the extension work
+require 'page'
+require 'lib/page_url_override'
+
 class OverridePageUriExtension < Radiant::Extension
   version "1.0"
   description "Describe your extension here"
   url "http://yourwebsite.com/override_page_uri"
   
-  # define_routes do |map|
-  #   map.connect 'admin/override_page_uri/:action', :controller => 'admin/override_page_uri'
-  # end
-  
   def activate
-    # admin.tabs.add "Override Page Uri", "/admin/override_page_uri", :after => "Layouts", :visibility => [:all]
+    Page.send(:validate, :validate_url_override_is_a_valid_uri)
+    Page.send(:validate, :validate_url_override_uniqueness)
+    admin.page.edit.add :extended_metadata, "url_override"
   end
   
   def deactivate
-    # admin.tabs.remove "Override Page Uri"
+    # admin.page.edit.remove :extended_metadata, "url_override"
   end
   
 end
