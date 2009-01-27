@@ -12,10 +12,10 @@ require 'user'
 require 'page'
 require 'lib/page_url_override'
 
-class OverridePageUriExtension < Radiant::Extension
+class UrlOverrideExtension < Radiant::Extension
   version "1.0"
-  description "Describe your extension here"
-  url "http://yourwebsite.com/override_page_uri"
+  description "Allows for the url of a page to be overriden to point to a different local URL. Any requests to that url will render the destination page"
+  url "http://github.com/tricycle/radiant-override-page-url-extension"
   
   def activate
     Page.send(:include, PageUrlOverride)

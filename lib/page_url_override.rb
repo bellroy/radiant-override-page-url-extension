@@ -6,10 +6,11 @@ module PageUrlOverride
     receiver.extend         ClassMethods
     receiver.send :include, InstanceMethods
     receiver.class_eval do
-      validate :validate_url_override_is_a_valid_uri
+      validate :validate_url_override_is_a_valid_url
       validate :validate_url_override_uniqueness
+      validates_length_of :url_override, :maximum => 200, :allow_nil => true
       
-      # guard alias_method_chain calls, OverridePageUriExtension#activate can be called multiple times (at least in dev mode)
+      # guard alias_method_chain calls, #activate can be called multiple times (at least in dev mode)
       # and will result in stack overflow if methods aliased with the same thing more than once.
       alias_method_chain :url, :generated_override unless instance_methods.include?('url_without_generated_override')      
       class << self
@@ -33,7 +34,7 @@ module PageUrlOverride
   end
   
   module InstanceMethods
-    def validate_url_override_is_a_valid_uri
+    def validate_url_override_is_a_valid_url
       begin
         return unless url_override
         URI.parse(url_override)
@@ -44,13 +45,18 @@ module PageUrlOverride
     end
 
     def validate_url_override_uniqueness
-      return if url_override.blank?
-
       existing_duplicate = Page.find_by_url(url)
       # we're ok if we find ourselves, or if we find nothing - there is no duplicate
       return if existing_duplicate.nil? || existing_duplicate == self || FileNotFoundPage === existing_duplicate
-
-      errors.add(:url_override, "results in non unique url")
+      
+      msg = "results in non unique url"
+      if url_override.blank?
+        # if the url_override isn't specified, and we're a duplicate, then it's a problem with the slug
+        errors.add(:slug, msg)
+      else
+        # otherwise the problem is with the url_override
+        errors.add(:url_override, msg)
+      end
     end
 
     def url_override=(a_url_override)

@@ -50,6 +50,13 @@ describe Page do
       it "should be valid if the url_override is valid" do
         page_url_override_is_valid! "/good/url_override"
       end
+      
+      it "should be invalid if the url_override is too long" do
+        page_url_override_is_valid! "/#{"a"*197}/" # 199 characters including /../
+        page_url_override_is_valid! "/#{"a"*198}/" # 200 ...
+        page_url_override_is_invalid! "/#{"a"*199}/" #201 ...
+        page_url_override_is_invalid! "/#{"a"*200}/" #202 ...
+      end
     
       context "for duplicate" do
         before(:each) do
@@ -74,6 +81,54 @@ describe Page do
           page_url_override_is_invalid! '/parent_page/child_page1/'
         end
       
+      end
+    end
+    
+    context "slug" do
+      context "validation" do
+        
+        before(:each) do
+          create_page 'parent page', :slug => 'parent_page' do
+            create_page 'child page 1', :slug => 'child_page1'
+          create_page 'url_override_page', :slug => 'url_override', :url_override => '/parent_page/bar/'
+          end
+        end
+        
+        def slug_is_invalid!(slug, url_override=nil)
+          p = Page.new(:slug => slug, :url_override => url_override, :parent => pages(:parent_page))
+          p.valid?
+          p.errors.on(:slug).should_not be_blank
+        end
+        
+        def slug_is_valid!(slug, url_override=nil)
+          p = Page.new(:slug => slug, :url_override => url_override, :parent => pages(:parent_page))
+          p.valid?
+          p.errors.on(:slug).should be_blank
+        end
+        
+        context "when no url_override is set" do
+          it "should be valid if the generated URL for the page does not duplicate another generated URL or overridden url" do
+            slug_is_valid!('ok')
+          end
+          it "should be invalid if the generated URL for the page duplicates another overriden URL" do
+            slug_is_invalid!('bar')
+          end
+          it "should be invalid if the generated URL for the page duplicates another generated URL" do
+            slug_is_invalid!('child_page1')
+          end
+        end
+        
+        context "when url_override is set" do
+          it "should be valid if the generated URL for the page does not duplicate another generated URL or overridden url" do
+            slug_is_valid!('ok', '/parent_page/foo/')
+          end
+          it "should be invalid if the slug URL for the page duplicates another slug" do
+            slug_is_invalid!('child_page1', '/parent_page/foo/')
+          end
+          it "should be valid if the generated URL for the page duplicates another generated URL" do
+            slug_is_valid!('bar', '/parent_page/foo/')
+          end
+        end
       end
     end
   
