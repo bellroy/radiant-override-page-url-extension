@@ -36,11 +36,11 @@ describe Page do
       end
   
       it "should be valid with a url with leading spaces" do
-        page_url_override_is_valid! "leading_space_bad"
+        page_url_override_is_valid! " leading_space_ok"
       end
   
       it "should be valid with a url with trailing spaces" do
-        page_url_override_is_valid! "trailing_space_bad"
+        page_url_override_is_valid! "trailing_space_ok "
       end
     
       it "should be valid if the url_override is nil" do
@@ -78,7 +78,7 @@ describe Page do
     end
   
   
-    context "leading/trailing forward slash handling" do
+    context "auto data correction" do
       it "should append a trailing forward slash if one is missing" do
         @page.url_override = '/url/override'
         @page.url_override.should == '/url/override/'
@@ -102,6 +102,11 @@ describe Page do
       it "should not prepend or append a forward slash if url_override is nil" do
         @page.url_override = nil
         @page.url_override.should be_nil
+      end
+      
+      it "should strip leading/trailing spaces" do
+        @page.url_override = ' /url_with_leading_trailing_spaces/ '
+        @page[:url_override].should == '/url_with_leading_trailing_spaces/'
       end
     end
   end
@@ -145,25 +150,59 @@ describe Page do
   
   context "find_by_url" do
     
+    before(:each) do
+      create_page 'parent page', :slug => 'parent_page' do
+        create_page 'published page without override', :slug => 'published_page_without_override', :status_id => Status[:published].id
+        create_page 'draft page without override', :slug => 'draft_page_without_override', :status_id => Status[:draft].id
+        create_page 'published page with override', :slug => 'published_page_with_override', :status_id => Status[:published].id, :url_override => '/foo/published/'
+        create_page 'draft page with override', :slug => 'draft_page_with_override', :status_id => Status[:draft].id, :url_override => '/bar/draft/'
+      end
+    end
+    
+    it "should default live to true if not specified" do
+      non_published_page = '/parent_page/draft_page/'
+      Page.find_by_url(non_published_page).should == Page.find_by_url(non_published_page, true)
+      Page.find_by_url(non_published_page).should != Page.find_by_url(non_published_page, false)
+    end
+    
     context "on pages without url_override" do
       context "that are unpublished" do
-        it "should not be found at their generated url in live mode"
-        it "should be found at their generated url in dev mode"
+        it "should not be found at their generated url in live mode" do
+          Page.find_by_url('/parent_page/draft_page_without_override/').should be_blank
+        end
+        it "should be found at their generated url in dev mode" do
+          Page.find_by_url('/parent_page/draft_page_without_override/', false).should == pages(:draft_page_without_override)
+        end
       end
+
       context "that are published" do
-        it "should be found at their generated url in live mode"
-        it "should be found at their generated url in dev mode"
+        it "should be found at their generated url in live mode" do
+          Page.find_by_url('/parent_page/published_page_without_override/').should == pages(:published_page_without_override)
+        end
+        it "should be found at their generated url in dev mode" do
+          Page.find_by_url('/parent_page/published_page_without_override/', false).should == pages(:published_page_without_override)
+        end
       end
     end
     
     context "on pages with url_override" do
       context "that are unpublished" do
-        it "should not be found at their url_override in live mode"
-        it "should be found at their url_override in dev mode"
+        it "should not be found at their url_override in live mode" do
+          Page.find_by_url('/bar/draft/').should be_nil
+        end
+
+        it "should be found at their url_override in dev mode" do
+          Page.find_by_url('/bar/draft/', false).should == pages(:draft_page_with_override)
+        end
       end
       context "that are published" do
-        it "should be found at their url_override in live mode"
-        it "should be found at their url_override in dev mode"
+        it "should be found at their url_override in live mode" do
+          Page.find_by_url('/foo/published/').should == pages(:published_page_with_override)
+        end
+
+        it "should be found at their url_override in dev mode" do
+          Page.find_by_url('/foo/published/', false).should == pages(:published_page_with_override)
+        end
       end
     end
     

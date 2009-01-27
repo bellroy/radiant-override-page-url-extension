@@ -22,7 +22,9 @@ module PageUrlOverride
   module ClassMethods
     def find_by_url_with_generated_override(url, live = true)
       clean_url = "/#{ url.strip }/".gsub(%r{//+}, '/') 
-      page = Page.find(:first, :conditions => ["url_override = ?", clean_url])
+      conditions = {:url_override => clean_url}
+      conditions[:status_id] = Status[:published].id if live
+      page = Page.find(:first, :conditions => conditions)
     
       return page if page
       
