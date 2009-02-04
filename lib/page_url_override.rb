@@ -45,7 +45,11 @@ module PageUrlOverride
     end
 
     def validate_url_override_uniqueness
-      existing_duplicate = Page.find_by_url(url)
+      existing_duplicate = begin
+        Page.find_by_url(url)
+      rescue Page::MissingRootPageError
+        nil
+      end
       # we're ok if we find ourselves, or if we find nothing - there is no duplicate
       return if existing_duplicate.nil? || existing_duplicate == self || FileNotFoundPage === existing_duplicate
       
@@ -56,7 +60,7 @@ module PageUrlOverride
       else
         # otherwise the problem is with the url_override
         errors.add(:url_override, msg)
-      end
+      end      
     end
 
     def url_override=(a_url_override)

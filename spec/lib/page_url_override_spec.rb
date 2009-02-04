@@ -1,6 +1,14 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
-describe Page do
+describe Page, 'without existing homepage' do
+  it 'should not complain about missing homepage when creating homepage' do
+    Page.delete_all # make sure radiants horrible testing setup doesnt interfere with us
+    Page.count.should == 0
+    lambda { Page.create!(:slug => '/') }.should_not raise_error(Page::MissingRootPageError)
+  end
+end
+
+describe Page, 'with existing homepage' do
   
   scenario :home_page
   
@@ -30,7 +38,7 @@ describe Page do
         page.valid?
         page.errors.on(:url_override).should be_blank
       end
-  
+    
       it "should not be valid with a url with spaces" do
         page_url_override_is_invalid! "BAD URL IS BAD"
       end
