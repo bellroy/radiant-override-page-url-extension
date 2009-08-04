@@ -1,3 +1,7 @@
 = url_override
 
 Allows a different URL to be specified for a page relative to the site root. Requests on this this URL will serve up the page instead
+
+= Note
+
+If a page uses a URL override, it is recommended all children do also, or you risk them becoming 404s. 
